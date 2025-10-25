@@ -49,4 +49,5 @@ A _wpa_supplicant_ configuration template can be found in `resources/wpa_supplic
 
 ### Hints
 
--   On Mac OS X building the gomidi (V2) modules might fail due to `ld: library not found for -lporttime`. See <https://gitlab.com/gomidi/midi/-/issues/33>
+- On Mac OS X building the gomidi (V2) modules might fail due to `ld: library not found for -lporttime`. See <https://gitlab.com/gomidi/midi/-/issues/33>
+- On Mac OS X with using Homebrew - `portmidi` header files might not get resolved (`portmidi.go:23:11: fatal error: 'portmidi.h' file not found`). Add commandline/IDE env config according to actual installation path: `CGO_LDFLAGS=-lportmidi -L/opt/homebrew/lib`, `CGO_CFLAGS=-I/opt/homebrew/include`

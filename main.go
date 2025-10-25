@@ -9,19 +9,23 @@ import (
 
 	"github.com/mrechtien/mixgo/base"
 	"github.com/mrechtien/mixgo/config"
+	_ "github.com/mrechtien/mixgo/cq"
 	"github.com/mrechtien/mixgo/input"
-	_ "github.com/mrechtien/mixgo/qu"
-	_ "github.com/mrechtien/mixgo/xr"
-
-	"gitlab.com/gomidi/midi/v2"
+	_ "github.com/mrechtien/mixgo/input/portmididrv"
 )
 
-func midiToKey(ch uint8, status uint8) string {
-	return fmt.Sprintf("%02X%02X", ch, status)
+/**
+ * creates a key for callback / action lookup using
+ * MIDI channel and control change value
+ */
+func midiToKey(ch uint8, cc uint8) string {
+	return fmt.Sprintf("%02X%02X", ch, cc)
 }
 
+/**
+ *
+ */
 func main() {
-
 	var cfg config.Config
 	if len(os.Args) == 2 {
 		configPath := os.Args[1]
@@ -38,12 +42,17 @@ func main() {
 		switch mapping.Name {
 		case base.MUTE_GROUP:
 			muteGroup := *mixer.NewMuteGroup(mapping.Target)
-			callbacks[key] = func(ch uint8, status uint8, val uint8) {
+			callbacks[key] = func(cc uint8, val uint8, status uint8) {
 				muteGroup.Toggle(val == mapping.ValueOn)
+			}
+		case base.MUTE_CHANNEL:
+			muteChannel := *mixer.NewMuteChannel(mapping.Target)
+			callbacks[key] = func(cc uint8, val uint8, status uint8) {
+				muteChannel.Toggle(val == mapping.ValueOn)
 			}
 		case base.TAP_DELAY:
 			tapDelay := *mixer.NewTapDelay(mapping.Target)
-			callbacks[key] = func(ch uint8, status uint8, val uint8) {
+			callbacks[key] = func(cc uint8, val uint8, status uint8) {
 				tapDelay.Trigger()
 			}
 		default:
@@ -51,24 +60,43 @@ func main() {
 		}
 	}
 
-	// setup midi & input handling / callback
-	stop := input.SetupAndHandleMidi(&cfg, func(ch, status, val byte) {
-		key := midiToKey(ch, status)
+	// setup input
+	input := *input.CreateInput(cfg.Input.Type, cfg.Input.Name)
+
+	input.Setup(&cfg, func(cc uint8, val uint8, status uint8) {
+		ch := cfg.Input.Channel
+		cmd := status & 0xF0 // mask off all but top 4 bits
+		if cmd >= 0x80 && cmd <= 0xE0 {
+			// it's a voice message
+			// find the channel by masking off all but the low 4 bits
+			ch = (status & 0x0F) + 1
+		}
+
+		key := midiToKey(ch, cc)
 		callback := callbacks[key]
 		if callback == nil {
-			log.Printf("Unmapped MIDI control change: %+v\n", midi.ControlChange(ch, status, val))
+			log.Printf("Unmapped MIDI Event CC Number [%v] CC Value [%v] Status [%v]", cc, val, status)
 			return
 		}
-		callback.(func(ch, status, val byte))(ch, status, val)
+		callback.(func(uint8, uint8, uint8))(cc, val, status)
 	})
+
+	/*
+		callback := callbacks["0102"]
+		go func() {
+			for i := range 2 {
+				callback.(func(ch, status, val uint8))(0, 1, 0x01)
+				// Calling Sleep method
+				time.Sleep(2000 * time.Millisecond)
+				fmt.Println("xxx ", i)
+			}
+		}()
+	*/
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 	log.Println("MixGo is up and running!")
-
 	signal := <-signalChan
 	log.Printf("Exitting on signal: %d\n", signal)
-	stop()
-	midi.CloseDriver()
 	log.Println("Done.")
 }

@@ -1,0 +1,32 @@
+#
+# Configuration for Allen & Heath QU 24
+#
+Input:
+    Type: 'portmidi'
+    Name: 'MIDIMATE II Port 1'
+    Channel: 1
+Output:
+    Name: 'cq'
+    Ip: '192.168.178.55'
+    Port: 51325
+Mappings:
+    - Name: 'MuteChannel'
+      Target: 81
+      CC: 0
+      ValueOn: 1
+    - Name: 'MuteChannel'
+      Target: 82
+      CC: 1
+      ValueOn: 1
+    - Name: 'TapDelay'
+      Target: 2
+      CC: 10
+      ValueOn: 1
+    - Name: 'MuteGroup'
+      Target: 0
+      CC: 5
+      ValueOn: 1
+    - Name: 'MuteGroup'
+      Target: 1
+      CC: 6
+      ValueOn: 1

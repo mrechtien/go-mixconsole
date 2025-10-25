@@ -40,12 +40,17 @@ func sendToMixer(ip string, port uint, output chan osc.Message) {
 	}
 }
 
-func (mixer *XRMixer) NewMuteGroup(muteChannel byte) *base.MuteGroup {
+func (mixer *XRMixer) NewMuteGroup(muteChannel uint8) *base.MuteGroup {
 	var muteGroup base.MuteGroup = NewMuteGroup(muteChannel, mixer.output)
 	return &muteGroup
 }
 
-func (mixer *XRMixer) NewTapDelay(fxChannel byte) *base.TapDelay {
+func (mixer *XRMixer) NewMuteChannel(muteChannel uint8) *base.MuteChannel {
+	var muteGroup base.MuteChannel = NewMuteChannel(muteChannel, mixer.output)
+	return &muteGroup
+}
+
+func (mixer *XRMixer) NewTapDelay(fxChannel uint8) *base.TapDelay {
 	var tapDelay base.TapDelay = NewTapDelay(fxChannel, mixer.output)
 	return &tapDelay
 }

@@ -13,8 +13,9 @@ const (
 )
 
 type Input struct {
+	Type    string
 	Name    string
-	Channel byte
+	Channel uint8
 }
 
 type Output struct {
@@ -25,9 +26,9 @@ type Output struct {
 
 type Mapping struct {
 	Name    string
-	Target  byte
-	CC      byte
-	ValueOn byte
+	Target  uint8
+	CC      uint8
+	ValueOn uint8
 }
 
 type Config struct {

@@ -14,12 +14,12 @@ const (
 
 type XRTapDelay struct {
 	base.BaseTapDelay
-	fxChannel byte
+	fxChannel uint8
 	output    chan osc.Message
 }
 
 // channel is the mixer channel (FX) to trigger the tap delay on
-func NewTapDelay(fxChannel byte, output chan osc.Message) *XRTapDelay {
+func NewTapDelay(fxChannel uint8, output chan osc.Message) *XRTapDelay {
 	tapDelay := XRTapDelay{
 		BaseTapDelay: base.BaseTapDelay{
 			LastTriggered: 0,

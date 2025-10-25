@@ -21,13 +21,13 @@ const (
 
 type QuTapDelay struct {
 	base.BaseTapDelay
-	midiChannel byte
-	fxChannel   byte
-	output      chan []byte
+	midiChannel uint8
+	fxChannel   uint8
+	output      chan []uint8
 }
 
 // channel is the mixer channel (FX) to trigger the tap delay on
-func NewTapDelay(midiChannel byte, fxChannel byte, output chan []byte) *QuTapDelay {
+func NewTapDelay(midiChannel uint8, fxChannel uint8, output chan []uint8) *QuTapDelay {
 	tapDelay := QuTapDelay{
 		BaseTapDelay: base.BaseTapDelay{
 			LastTriggered: 0,
@@ -54,7 +54,7 @@ func (tapDelay *QuTapDelay) Trigger() {
 	}
 }
 
-func generateDelayMessage(tapDelay *QuTapDelay, channel byte, coarseValue byte, fineValue byte) []byte {
+func generateDelayMessage(tapDelay *QuTapDelay, channel uint8, coarseValue uint8, fineValue uint8) []uint8 {
 	// Fine and course value resolution time value = 00 to 7F
 	// Last byte - left tap: 0x05, right tap: 0x07
 	fineData := toSendValue(channel, 0x49, fineValue, 0x05)
@@ -66,7 +66,7 @@ func generateDelayMessage(tapDelay *QuTapDelay, channel byte, coarseValue byte, 
 	return append(fineData, coarseData...)
 }
 
-func computeDelayValues(delayMillis int) (byte, byte) {
+func computeDelayValues(delayMillis int) (uint8, uint8) {
 
 	// Returns a tuple with MIDI parameter values representing the given delay (seconds as float).
 	// Returns (0x00,0x00) if delay time is below minimum time.
@@ -85,11 +85,11 @@ func computeDelayValues(delayMillis int) (byte, byte) {
 	course := math.Floor(value / 128)
 	fine := math.Mod(value, 128)
 
-	return byte(math.Round(course)), byte(math.Round(fine))
+	return uint8(math.Round(course)), uint8(math.Round(fine))
 }
 
-func toSendValue(msb byte, lsb byte, vc byte, vf byte) []byte {
-	message := []byte{0xB0, 0x63, 0x00, 0xB0, 0x62, 0x00, 0xB0, 0x06, 0x00, 0xB0, 0x26, 0x00}
+func toSendValue(msb uint8, lsb uint8, vc uint8, vf uint8) []uint8 {
+	message := []uint8{0xB0, 0x63, 0x00, 0xB0, 0x62, 0x00, 0xB0, 0x06, 0x00, 0xB0, 0x26, 0x00}
 	message[PLACE_MSB] = msb
 	message[PLACE_LSB] = lsb
 	message[PLACE_VC] = vc
@@ -97,7 +97,7 @@ func toSendValue(msb byte, lsb byte, vc byte, vf byte) []byte {
 	return message
 }
 
-func setMidiChannel(channel byte, message []byte) {
+func setMidiChannel(channel uint8, message []uint8) {
 	if len(message) != 9 && len(message) != 12 {
 		log.Fatal("MIDI message length must be 9 or 12 bytes")
 	}

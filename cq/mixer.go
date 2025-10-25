@@ -1,4 +1,4 @@
-package qu
+package cq
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	MIXER_NAME = "qu"
+	MIXER_NAME = "cq"
 )
 
 func init() {
@@ -19,16 +19,16 @@ func init() {
 	})
 }
 
-type QuMixer struct {
+type CqMixer struct {
 	output chan []uint8
 }
 
 func NewMixer(ip string, port uint) *base.Mixer {
-	quMixer := QuMixer{
+	cqMixer := CqMixer{
 		output: make(chan []uint8),
 	}
-	go sendToMixer(ip, port, quMixer.output)
-	var mixer base.Mixer = &quMixer
+	go sendToMixer(ip, port, cqMixer.output)
+	var mixer base.Mixer = &cqMixer
 	return &mixer
 }
 
@@ -39,24 +39,24 @@ func sendToMixer(ip string, port uint, output chan []uint8) {
 		if err != nil {
 			log.Printf("Could not connect to TCP server: %s", err)
 		} else {
-			log.Printf("Sending message to mixer: %v\n", message)
+			log.Printf("Sending message to mixer: %v => % 02X\n", message, message)
 			connection.Write(message)
 		}
 		connection.Close()
 	}
 }
 
-func (mixer *QuMixer) NewMuteGroup(muteChan uint8) *base.MuteGroup {
+func (mixer *CqMixer) NewMuteGroup(muteChan uint8) *base.MuteGroup {
 	var muteGroup base.MuteGroup = NewMuteGroup(0x00, muteChan, mixer.output)
 	return &muteGroup
 }
 
-func (mixer *QuMixer) NewMuteChannel(muteChan uint8) *base.MuteChannel {
-	var muteChannel base.MuteChannel = NewMuteGroup(0x00, muteChan, mixer.output)
+func (mixer *CqMixer) NewMuteChannel(muteChan uint8) *base.MuteChannel {
+	var muteChannel base.MuteChannel = NewMuteChannel(0x00, muteChan, mixer.output)
 	return &muteChannel
 }
 
-func (mixer *QuMixer) NewTapDelay(fxChan uint8) *base.TapDelay {
+func (mixer *CqMixer) NewTapDelay(fxChan uint8) *base.TapDelay {
 	var tapDelay base.TapDelay = NewTapDelay(0x00, fxChan, mixer.output)
 	return &tapDelay
 }

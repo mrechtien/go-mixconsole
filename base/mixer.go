@@ -1,8 +1,9 @@
 package base
 
 type Mixer interface {
-	NewMuteGroup(muteChannel byte) *MuteGroup
-	NewTapDelay(fxChannel byte) *TapDelay
+	NewMuteGroup(muteChan uint8) *MuteGroup
+	NewMuteChannel(muteChan uint8) *MuteChannel
+	NewTapDelay(fxChan uint8) *TapDelay
 }
 
 var mixerRegistry = map[string]interface{}{}

@@ -7,29 +7,28 @@ const (
 )
 
 type QuMuteGroup struct {
-	midiChannel byte
-	muteChannel byte
-	output      chan []byte
+	midiChannel uint8
+	muteChannel uint8
+	output      chan []uint8
 }
 
-func NewMuteGroup(midiChannel byte, muteChannel byte, output chan []byte) *QuMuteGroup {
+func NewMuteGroup(midiChan uint8, muteChan uint8, output chan []uint8) *QuMuteGroup {
 	muteGroup := QuMuteGroup{
-		midiChannel: midiChannel,
-		muteChannel: MUTE_GROUPS + muteChannel,
+		midiChannel: midiChan,
+		muteChannel: MUTE_GROUPS + muteChan,
 		output:      output,
 	}
 	return &muteGroup
 }
 
 func (muteGroup *QuMuteGroup) Toggle(onOff bool) {
-	message := toMute(muteGroup.muteChannel, onOff)
-	muteGroup.output <- message
+	muteGroup.output <- createMuteGroupMessage(muteGroup.muteChannel, onOff)
 }
 
-func toMute(muteChannel byte, onOff bool) []byte {
-	msg := []byte{0x90, 0x00, 0x7F, 0x90, 0x00, 0x40}
-	msg[1] = muteChannel
-	msg[4] = muteChannel
+func createMuteGroupMessage(muteChan uint8, onOff bool) []uint8 {
+	msg := []uint8{0x90, 0x00, 0x7F, 0x90, 0x00, 0x40}
+	msg[1] = muteChan
+	msg[4] = muteChan
 	if onOff {
 		msg[5] = MUTE_ON
 	} else {

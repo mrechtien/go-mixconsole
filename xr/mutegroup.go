@@ -14,11 +14,11 @@ const (
 
 type XRMuteGroup struct {
 	base.MuteGroup
-	muteChannel byte
+	muteChannel uint8
 	output      chan osc.Message
 }
 
-func NewMuteGroup(muteChannel byte, output chan osc.Message) *XRMuteGroup {
+func NewMuteGroup(muteChannel uint8, output chan osc.Message) *XRMuteGroup {
 	muteGroup := XRMuteGroup{
 		muteChannel: muteChannel,
 		output:      output,

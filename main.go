@@ -7,11 +7,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/mrechtien/mixgo/base"
 	"github.com/mrechtien/mixgo/config"
-	_ "github.com/mrechtien/mixgo/cq"
 	"github.com/mrechtien/mixgo/input"
+	_ "github.com/mrechtien/mixgo/input/gomidi"
+	_ "github.com/mrechtien/mixgo/input/gpio"
 	_ "github.com/mrechtien/mixgo/input/portmididrv"
+	"github.com/mrechtien/mixgo/mixer"
+	_ "github.com/mrechtien/mixgo/mixer/cq"
 )
 
 /**
@@ -33,25 +35,25 @@ func main() {
 	}
 
 	// setup mixer
-	mixer := *base.CreateMixer(cfg.Output.Name, cfg.Output.Ip, cfg.Output.Port)
+	mix := *mixer.CreateMixer(cfg.Output.Name, cfg.Output.Ip, cfg.Output.Port)
 
 	// create callbacks for trigger mapping
 	callbacks := map[string]interface{}{}
 	for _, mapping := range cfg.Mappings {
 		key := midiToKey(cfg.Input.Channel, mapping.CC)
 		switch mapping.Name {
-		case base.MUTE_GROUP:
-			muteGroup := *mixer.NewMuteGroup(mapping.Target)
+		case mixer.MUTE_GROUP:
+			muteGroup := *mix.NewMuteGroup(mapping.Target)
 			callbacks[key] = func(cc uint8, val uint8, status uint8) {
 				muteGroup.Toggle(val == mapping.ValueOn)
 			}
-		case base.MUTE_CHANNEL:
-			muteChannel := *mixer.NewMuteChannel(mapping.Target)
+		case mixer.MUTE_CHANNEL:
+			muteChannel := *mix.NewMuteChannel(mapping.Target)
 			callbacks[key] = func(cc uint8, val uint8, status uint8) {
 				muteChannel.Toggle(val == mapping.ValueOn)
 			}
-		case base.TAP_DELAY:
-			tapDelay := *mixer.NewTapDelay(mapping.Target)
+		case mixer.TAP_DELAY:
+			tapDelay := *mix.NewTapDelay(mapping.Target)
 			callbacks[key] = func(cc uint8, val uint8, status uint8) {
 				tapDelay.Trigger()
 			}

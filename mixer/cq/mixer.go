@@ -2,10 +2,11 @@ package cq
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"time"
 
+	"github.com/mrechtien/mixgo/display"
 	"github.com/mrechtien/mixgo/mixer"
 )
 
@@ -14,18 +15,20 @@ const (
 )
 
 func init() {
-	mixer.AddMixer(MIXER_NAME, func(ip string, port uint) *mixer.Mixer {
-		return NewMixer(ip, port)
+	mixer.AddMixer(MIXER_NAME, func(ip string, port uint, displayEvents chan *display.DisplayEvent) *mixer.Mixer {
+		return NewMixer(ip, port, displayEvents)
 	})
 }
 
 type CqMixer struct {
-	output chan []uint8
+	output        chan []uint8
+	displayEvents chan *display.DisplayEvent
 }
 
-func NewMixer(ip string, port uint) *mixer.Mixer {
+func NewMixer(ip string, port uint, displayEvents chan *display.DisplayEvent) *mixer.Mixer {
 	cqMixer := CqMixer{
-		output: make(chan []uint8),
+		output:        make(chan []uint8),
+		displayEvents: displayEvents,
 	}
 	go sendToMixer(ip, port, cqMixer.output)
 	var mixer mixer.Mixer = &cqMixer
@@ -35,11 +38,12 @@ func NewMixer(ip string, port uint) *mixer.Mixer {
 func sendToMixer(ip string, port uint, output chan []uint8) {
 	for message := range output {
 		dialer := net.Dialer{Timeout: (time.Second * 5)}
-		connection, err := dialer.Dial("tcp", fmt.Sprintf("%s:%d", ip, port))
+		serverIpPort := fmt.Sprintf("%s:%d", ip, port)
+		connection, err := dialer.Dial("tcp", serverIpPort)
 		if err != nil {
-			log.Printf("Could not connect to TCP server: %s", err)
+			slog.Error("could not connect tcp server ", slog.Any("address", serverIpPort), slog.Any("error", err))
 		} else {
-			log.Printf("Sending message to mixer: %v => % 02X\n", message, message)
+			slog.Info("sending message to mixer", slog.Any("int", fmt.Sprintf("%v", message)), slog.String("hex", fmt.Sprintf("% 02X", message)))
 			connection.Write(message)
 		}
 		connection.Close()
@@ -47,16 +51,16 @@ func sendToMixer(ip string, port uint, output chan []uint8) {
 }
 
 func (mix *CqMixer) NewMuteGroup(muteChannel uint8) *mixer.MuteGroup {
-	var muteGroup mixer.MuteGroup = NewMuteGroup(0x00, muteChannel, mix.output)
+	var muteGroup mixer.MuteGroup = NewMuteGroup(0x00, muteChannel, mix)
 	return &muteGroup
 }
 
 func (mix *CqMixer) NewMuteChannel(muteChannel uint8) *mixer.MuteChannel {
-	var muteChan mixer.MuteChannel = NewMuteChannel(0x00, muteChannel, mix.output)
+	var muteChan mixer.MuteChannel = NewMuteChannel(0x00, muteChannel, mix)
 	return &muteChan
 }
 
 func (mix *CqMixer) NewTapDelay(fxChannel uint8) *mixer.TapDelay {
-	var tapDelay mixer.TapDelay = NewTapDelay(0x00, fxChannel, mix.output)
+	var tapDelay mixer.TapDelay = NewTapDelay(0x00, fxChannel, mix)
 	return &tapDelay
 }

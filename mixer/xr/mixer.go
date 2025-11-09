@@ -1,9 +1,11 @@
 package xr
 
 import (
-	"log"
+	"fmt"
+	"log/slog"
 
 	"github.com/hypebeast/go-osc/osc"
+	"github.com/mrechtien/mixgo/display"
 	"github.com/mrechtien/mixgo/mixer"
 )
 
@@ -16,7 +18,8 @@ type XRMixer struct {
 }
 
 func init() {
-	mixer.AddMixer(MIXER_NAME, func(ip string, port uint) *mixer.Mixer {
+	mixer.AddMixer(MIXER_NAME, func(ip string, port uint, displayEvents chan *display.DisplayEvent) *mixer.Mixer {
+		// TODO implement display events
 		return NewMixer(ip, port)
 	})
 }
@@ -33,9 +36,9 @@ func NewMixer(ip string, port uint) *mixer.Mixer {
 func sendToMixer(ip string, port uint, output chan osc.Message) {
 	client := osc.NewClient(ip, int(port))
 	for message := range output {
-		log.Printf("Sending message to mixer: %v\n", message)
+		slog.Info("sending message to mixer", slog.Any("message", fmt.Sprintf("%v", message)))
 		if err := client.Send(&message); err != nil {
-			log.Println("Error while sending message: ", err)
+			slog.Error("error while sending message", slog.Any("error", err))
 		}
 	}
 }

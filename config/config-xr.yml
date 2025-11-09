@@ -10,14 +10,14 @@ Output:
     Port: 10024
 Mappings:
     - Name: 'MuteGroup'
+      Control: 0
       Target: 2
-      CC: 0
       ValueOn: 127
     - Name: 'MuteGroup'
+      Control: 1
       Target: 3
-      CC: 1
       ValueOn: 127
     - Name: 'TapDelay'
+      Control: 2
       Target: 2
-      CC: 2
       ValueOn: 127

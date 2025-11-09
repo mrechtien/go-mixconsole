@@ -10,6 +10,7 @@ import (
 const (
 	MIN_DELAY_MILLIS = 5
 	MAX_DELAY_MILLIS = 1360
+	MIN_DELAY_TAPS   = 3
 
 	// byte indices
 	PLACE_MSB    = 2
@@ -46,7 +47,7 @@ func NewTapDelay(midiChannel uint8, fxChannel uint8, output chan []uint8) *QuTap
  * @param value ValueLevel Class with Level from -inf db to +10db
  */
 func (tapDelay *QuTapDelay) Trigger() {
-	tempo := mixer.CalculateTapTempo(&tapDelay.BaseTapDelay, MAX_DELAY_MILLIS)
+	tempo := mixer.CalculateTapTempo(&tapDelay.BaseTapDelay, MAX_DELAY_MILLIS, MIN_DELAY_TAPS)
 	if tempo > 0 {
 		course, fine := computeDelayValues(tempo)
 		message := generateDelayMessage(tapDelay, 2, course, fine)

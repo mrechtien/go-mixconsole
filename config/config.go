@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	MUTE_GROUP = "MuteGroup"
-	TAP_DELAY  = "TapDelay"
+	MUTE_GROUP   = "MuteGroup"
+	MUTE_CHANNEL = "MuteChannel"
+	TAP_DELAY    = "TapDelay"
 )
 
 type Input struct {
@@ -26,26 +27,45 @@ type Output struct {
 
 type Mapping struct {
 	Name    string
+	Control uint8
 	Target  uint8
-	CC      uint8
 	ValueOn uint8
+	Display uint8
+}
+
+type Wifi struct {
+	SSID   string
+	Passwd string
+	Hidden bool
+}
+
+type Display struct {
+	Name string
 }
 
 type Config struct {
 	Input    Input
 	Output   Output
 	Mappings []Mapping
+	Wifi     Wifi
+	Display  Display
+}
+
+func NewMapping() *Mapping {
+	return &Mapping{
+		ValueOn: 1,
+	}
 }
 
 func ReadConfig(path string) Config {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatalln("Config file is not readable: " + path)
+		log.Fatalln("config file not readable, path: " + path)
 	}
 	config := Config{}
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
-		log.Fatalln("Could not parse config file: " + path)
+		log.Fatalln("config file not parsable, path: " + path)
 	}
 	return config
 }

@@ -10,6 +10,7 @@ import (
 const (
 	MIN_DELAY_MILLIS = 50
 	MAX_DELAY_MILLIS = 3000
+	MIN_DELAY_TAPS   = 3
 )
 
 type XRTapDelay struct {
@@ -37,7 +38,7 @@ func NewTapDelay(fxChannel uint8, output chan osc.Message) *XRTapDelay {
  * @param value ValueLevel Class with Level from -inf db to +10db
  */
 func (tapDelay *XRTapDelay) Trigger() {
-	tempo := mixer.CalculateTapTempo(&tapDelay.BaseTapDelay, MAX_DELAY_MILLIS)
+	tempo := mixer.CalculateTapTempo(&tapDelay.BaseTapDelay, MAX_DELAY_MILLIS, MIN_DELAY_TAPS)
 	if tempo > 0 {
 		percentage := normalizeTempo(tempo)
 		message := generateDelayMessage(tapDelay, percentage)

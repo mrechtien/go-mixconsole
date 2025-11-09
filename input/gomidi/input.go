@@ -1,9 +1,12 @@
 package gomidi
 
 import (
+	"fmt"
 	"log"
+	"log/slog"
 
 	"github.com/mrechtien/mixgo/config"
+	"github.com/mrechtien/mixgo/input"
 
 	"gitlab.com/gomidi/midi/v2"
 	//_ "gitlab.com/gomidi/midi/v2/drivers/portmididrv"
@@ -11,42 +14,21 @@ import (
 
 func printMidiDevices() {
 	// allows you to get the ports when using "real" drivers like rtmididrv or portmididrv
-	log.Printf("MIDI IN Ports\n")
+	slog.Info("listing MIDI inputs")
 	for i, port := range midi.GetInPorts() {
-		log.Printf("no: %v %q\n", i, port)
+		slog.Info("available MIDI input port", slog.Any("idx", i), slog.Any("port", port))
 	}
-	log.Printf("\n\nMIDI OUT Ports\n")
+	slog.Info("listing MIDI outputs")
 	for i, port := range midi.GetOutPorts() {
-		log.Printf("no: %v %q\n", i, port)
+		slog.Info("available MIDI output port", slog.Any("idx", i), slog.Any("port", port))
 	}
-	log.Printf("\n\n")
 }
 
-func Setup(config *config.Config, callback func(uint8, uint8, uint8)) func() {
+func toHex(input any) string {
+	return fmt.Sprintf("%02X", input)
+}
 
-	// TODO
-	/*
-		stop := input.SetupAndHandleMidi(&cfg, func(ch, status, val uint8) {
-			key := midiToKey(ch, status)
-			callback := callbacks[key]
-			if callback == nil {
-				log.Printf("Unmapped MIDI control change: %+v\n", midi.ControlChange(ch, status, val))
-				return
-			}
-			callback.(func(ch, status, val uint8))(ch, status, val)
-		})
-
-		signalChan := make(chan os.Signal, 1)
-		signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
-		log.Println("MixGo is up and running!")
-
-		signal := <-signalChan
-		log.Printf("Exitting on signal: %d\n", signal)
-		stop()
-		midi.CloseDriver()
-		log.Println("Done.")
-	*/
-
+func Setup(config *config.Config, inputEvents chan *input.InputEvent) {
 	printMidiDevices()
 
 	in, err := midi.FindInPort(config.Input.Name)
@@ -56,11 +38,18 @@ func Setup(config *config.Config, callback func(uint8, uint8, uint8)) func() {
 
 	stop, err := midi.ListenTo(in, func(msg midi.Message, timestampms int32) {
 		var bt []uint8
-		var ch, status, val uint8
+		var ch, cc, val uint8
 		switch {
-		case msg.GetControlChange(&ch, &status, &val):
-			log.Printf("Received MIDI control change: channel %02X, status %02X, value %02X\n", ch, status, val)
-			callback(ch, status, val)
+		case msg.GetControlChange(&ch, &cc, &val):
+			slog.Debug("received MIDI control change", slog.Any("channel", toHex(ch)), slog.Any("control change", toHex(cc)), slog.Any("value", toHex(val)))
+			// TODO status => val OR val => status
+			inputEvents <- &input.InputEvent{
+				Channel: ch,
+				Control: cc,
+				Value:   val,
+			}
+
+			//callback(ch, status, val)
 		/*
 			case msg.GetSysEx(&bt):
 				log.Printf("got sysex: %X\n", bt)
@@ -71,14 +60,12 @@ func Setup(config *config.Config, callback func(uint8, uint8, uint8)) func() {
 		*/
 		default:
 			msg.GetSysEx(&bt)
-			log.Printf("Unmapped MIDI event:  %+v\n", bt)
+			slog.Warn("unmapped MIDI event", slog.Any("bt", bt))
 		}
 	}, midi.UseSysEx())
 
 	if err != nil {
-		log.Printf("ERROR: %s\n", err)
-		return nil
+		slog.Error("GoMidi error", slog.Any("error", err))
 	}
-
-	return stop
+	defer stop()
 }

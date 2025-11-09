@@ -18,11 +18,11 @@ type BaseTapDelay struct {
 	Tapping       []int64
 }
 
-func CalculateTapTempo(tapDelay *BaseTapDelay, maxDelayTime int) int {
+func CalculateTapTempo(tapDelay *BaseTapDelay, maxDelayTime int, minTaps int) int {
 	now := time.Now().UnixMilli()
-	if len(tapDelay.Tapping) > 3 {
+	if len(tapDelay.Tapping) > minTaps {
 		// limit length to prevent slow time approximation with long delays
-		tapDelay.Tapping = tapDelay.Tapping[:3]
+		tapDelay.Tapping = tapDelay.Tapping[:minTaps]
 	}
 	if tapDelay.LastTriggered > 0 && tapDelay.LastTriggered < now-int64(maxDelayTime) {
 		// reset if last trigger is longer than MAX_DELAY_TIME ago
@@ -46,8 +46,8 @@ func CalculateTapTempo(tapDelay *BaseTapDelay, maxDelayTime int) int {
 
 func calculateAverageDelay(tapping []int64) int64 {
 	var sum int64
-	for i := 0; i < len(tapping); i++ {
-		sum += tapping[i]
+	for _, value := range tapping {
+		sum += value
 	}
 	if sum > 0 {
 		return sum / int64(len(tapping))

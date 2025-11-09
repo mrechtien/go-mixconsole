@@ -12,7 +12,7 @@
 #Mapping: {
     Name:    ("MuteGroup" | "TapDelay") // The FEATURE name to control (e.g. MuteGroup, TapDelay)
     Target:  uint // Index of the targeted feature (e.g. 1st MuteGroup, 3rd FX/TapDelay, 1-n)
-    CC:      uint & < 128 // The MIDI CC to be triggered by (e.g. 0..127)
+    Control: uint & < 128 // The MIDI CC to be triggered by (e.g. 0..127)
     ValueOn: uint & < 128 | *127 // The MIDI CC VALUE to be considered as "on" or "true" (e.g. relevant for MuteGroup)
 }
 

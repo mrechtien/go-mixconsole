@@ -1,7 +1,9 @@
 package portmididrv
 
 import (
+	"fmt"
 	"log"
+	"log/slog"
 
 	"github.com/mrechtien/mixgo/config"
 	"github.com/mrechtien/mixgo/input"
@@ -17,16 +19,16 @@ type PortMidiInput struct {
 }
 
 func init() {
-	input.AddInput(INPUT_TYPE, func(name string) *input.Input {
-		return NewInput(name)
+	input.AddInputSource(INPUT_TYPE, func(name string) *input.InputSource {
+		return NewInputSource(name)
 	})
 }
 
-func NewInput(name string) *input.Input {
+func NewInputSource(name string) *input.InputSource {
 	portMidiInput := PortMidiInput{
 		inputs: discoverInputs(),
 	}
-	var input input.Input = &portMidiInput
+	var input input.InputSource = &portMidiInput
 	return &input
 }
 
@@ -36,23 +38,27 @@ func discoverInputs() map[string]portmidi.DeviceID {
 	for index := 0; index < deviceCount; index++ {
 		deviceInfo := portmidi.Info(portmidi.DeviceID(index))
 		if deviceInfo.IsInputAvailable {
-			log.Printf("Input Device '%s'\n", deviceInfo.Name)
+			slog.Info("input device", slog.Any("name", deviceInfo.Name))
 			inputs[deviceInfo.Name] = portmidi.DeviceID(index)
 		}
 		if deviceInfo.IsInputAvailable {
-			log.Printf("Output Device '%s'\n", deviceInfo.Name)
+			slog.Info("output device", slog.Any("name", deviceInfo.Name))
 		}
 	}
 	return inputs
 }
 
-func (input *PortMidiInput) Setup(config *config.Config, callback func(uint8, uint8, uint8)) func() {
+func toHex(input any) string {
+	return fmt.Sprintf("%02X", input)
+}
+
+func (portMidiInput *PortMidiInput) Setup(config *config.Config, inputEvents chan *input.InputEvent) {
 	portmidi.Initialize()
 	defer portmidi.Terminate()
 
-	inputName, isPresent := input.inputs[config.Input.Name]
+	inputName, isPresent := portMidiInput.inputs[config.Input.Name]
 	if !isPresent {
-		log.Fatalln("MIDI device not found: %s", inputName)
+		log.Fatalf("MIDI device not found: %s", inputName)
 	}
 
 	in, err := portmidi.NewInputStream(inputName, 1024)
@@ -66,10 +72,8 @@ func (input *PortMidiInput) Setup(config *config.Config, callback func(uint8, ui
 	for evt := range in.Listen() {
 		// Data1 = CC Number
 		// Data2 = CC Value
-		log.Printf("MIDI Event CC Number [%v] CC Value [%v] Status [%v]", evt.Data1, evt.Data2, evt.Status)
-		callback(uint8(evt.Data1), uint8(evt.Data2), uint8(evt.Status))
+		slog.Debug("Received MIDI event", slog.Any("channel", toHex(evt.Data1)), slog.Any("control change", toHex(evt.Data2)), slog.Any("status", toHex(evt.Status)))
+		inputEvents <- input.NewInputEvent(uint8(evt.Data1), uint8(evt.Data2))
+		//callback(uint8(evt.Data1), uint8(evt.Data2), uint8(evt.Status))
 	}
-
-	// TODO
-	return func() {}
 }

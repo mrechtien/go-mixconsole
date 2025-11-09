@@ -1,5 +1,7 @@
 package cq
 
+import "github.com/mrechtien/mixgo/display"
+
 const (
 	MUTE_ON     = 0x01
 	MUTE_OFF    = 0x00
@@ -9,21 +11,26 @@ const (
 type CqMuteGroup struct {
 	midiChannel uint8
 	muteChannel uint8
-	output      chan []uint8
+	mixer       *CqMixer
 }
 
-func NewMuteGroup(midiChannel uint8, muteChannel uint8, output chan []uint8) *CqMuteGroup {
+func NewMuteGroup(midiChannel uint8, muteChannel uint8, mixer *CqMixer) *CqMuteGroup {
 	muteGroup := CqMuteGroup{
 		midiChannel: midiChannel,
 		muteChannel: MUTE_GROUPS + muteChannel,
-		output:      output,
+		mixer:       mixer,
 	}
 	return &muteGroup
 }
 
-func (muteGroup *CqMuteGroup) Toggle(onOff bool) {
-	message := toMuteGroupMessage(muteGroup.muteChannel, onOff)
-	muteGroup.output <- message
+func (control *CqMuteGroup) Toggle(onOff bool) {
+	message := toMuteGroupMessage(control.muteChannel, onOff)
+	control.mixer.output <- message
+	if onOff {
+		control.mixer.displayEvents <- display.CreateDisplayEvent(control.muteChannel, uint8(1))
+	} else {
+		control.mixer.displayEvents <- display.CreateDisplayEvent(control.muteChannel, uint8(0))
+	}
 }
 
 func toMuteGroupMessage(muteChannel uint8, onOff bool) []uint8 {

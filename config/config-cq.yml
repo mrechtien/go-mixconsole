@@ -1,5 +1,5 @@
 #
-# Configuration for Allen & Heath QU 24
+# Configuration for Allen & Heath CQ18T
 #
 Input:
     Type: 'portmidi'
@@ -11,22 +11,22 @@ Output:
     Port: 51325
 Mappings:
     - Name: 'MuteChannel'
+      Control: 0
       Target: 81
-      CC: 0
       ValueOn: 1
     - Name: 'MuteChannel'
+      Control: 1
       Target: 82
-      CC: 1
       ValueOn: 1
     - Name: 'TapDelay'
+      Control: 10
       Target: 2
-      CC: 10
       ValueOn: 1
     - Name: 'MuteGroup'
+      Control: 5
       Target: 0
-      CC: 5
       ValueOn: 1
     - Name: 'MuteGroup'
+      Control: 6
       Target: 1
-      CC: 6
       ValueOn: 1

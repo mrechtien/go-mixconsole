@@ -1,0 +1,40 @@
+#
+# Configuration for Allen & Heath CQ18T
+#
+Wifi:
+    SSID: DOTQ
+    Passwd: 
+    Hidden: false
+Input:
+    Type: 'gpio'
+    Channel: 0
+Display:
+    Name: 'gpio'
+Output:
+    Name: 'cq'
+    Ip: '192.168.178.55'
+    Port: 51325
+Mappings:
+    #- Name: 'MuteChannel'
+      #Control: 17
+      #Display: 26
+      #Target: 81
+      #ValueOn: 1
+    #- Name: 'MuteGroup'
+    #  Control: 17
+    #  Display: 26
+    #  Target: 0
+    #  ValueOn: 1
+    - Name: 'TapDelay'
+      Control: 17
+      Display: 26
+      Target: 2
+      ValueOn: 1
+#    - Name: 'MuteGroup'
+#      Control: 5
+#      Target: 0
+#      ValueOn: 1
+#    - Name: 'MuteGroup'
+#      Control: 6
+#      Target: 1
+#      ValueOn: 1

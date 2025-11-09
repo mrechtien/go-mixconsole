@@ -3,11 +3,14 @@ package main
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/mrechtien/mixgo/config"
+	"github.com/mrechtien/mixgo/display"
+	_ "github.com/mrechtien/mixgo/display/gpio"
 	"github.com/mrechtien/mixgo/input"
 	_ "github.com/mrechtien/mixgo/input/gomidi"
 	_ "github.com/mrechtien/mixgo/input/gpio"
@@ -24,36 +27,60 @@ func midiToKey(ch uint8, cc uint8) string {
 	return fmt.Sprintf("%02X%02X", ch, cc)
 }
 
-/**
- *
- */
+type InputEventConsumer func(cc uint8, val uint8, status uint8)
+
+func setupLogging() {
+	// logging
+	logOpts := &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}
+	logger := slog.New(slog.NewTextHandler(os.Stdout, logOpts))
+	slog.SetDefault(logger)
+}
+
 func main() {
+	setupLogging()
+
+	// configuration
 	var cfg config.Config
 	if len(os.Args) == 2 {
 		configPath := os.Args[1]
 		cfg = config.ReadConfig(configPath)
 	}
 
-	// setup mixer
-	mix := *mixer.CreateMixer(cfg.Output.Name, cfg.Output.Ip, cfg.Output.Port)
+	// wifi
+	if len(cfg.Wifi.SSID) > 0 {
+		//setup.ConnectWifi(&cfg.Wifi)
+	}
+
+	// display
+	displayEvents := make(chan *display.DisplayEvent)
+	display.SetupDisplay(&cfg.Display, cfg.Mappings, displayEvents)
+
+	// mixer
+	mix := *mixer.CreateMixer(cfg.Output.Name, cfg.Output.Ip, cfg.Output.Port, displayEvents)
 
 	// create callbacks for trigger mapping
-	callbacks := map[string]interface{}{}
+	callbacks := map[string]InputEventConsumer{}
 	for _, mapping := range cfg.Mappings {
-		key := midiToKey(cfg.Input.Channel, mapping.CC)
+		key := midiToKey(cfg.Input.Channel, mapping.Control)
+		slog.Debug("create callback", slog.Any("key", key))
 		switch mapping.Name {
 		case mixer.MUTE_GROUP:
 			muteGroup := *mix.NewMuteGroup(mapping.Target)
 			callbacks[key] = func(cc uint8, val uint8, status uint8) {
+				slog.Debug("callback MuteGroup", slog.Any("value", val))
 				muteGroup.Toggle(val == mapping.ValueOn)
 			}
 		case mixer.MUTE_CHANNEL:
 			muteChannel := *mix.NewMuteChannel(mapping.Target)
 			callbacks[key] = func(cc uint8, val uint8, status uint8) {
+				slog.Debug("callback MuteChannel", slog.Any("value", val))
 				muteChannel.Toggle(val == mapping.ValueOn)
 			}
 		case mixer.TAP_DELAY:
 			tapDelay := *mix.NewTapDelay(mapping.Target)
+			slog.Debug("callback TapDelay")
 			callbacks[key] = func(cc uint8, val uint8, status uint8) {
 				tapDelay.Trigger()
 			}
@@ -63,10 +90,19 @@ func main() {
 	}
 
 	// setup input
-	input := *input.CreateInput(cfg.Input.Type, cfg.Input.Name)
+	inputSource := *input.CreateInputSource(cfg.Input.Type, cfg.Input.Name)
+	inputEvents := make(chan *input.InputEvent)
 
-	input.Setup(&cfg, func(cc uint8, val uint8, status uint8) {
+	inputSource.Setup(&cfg, inputEvents)
+
+	for event := range inputEvents {
+
+		slog.Debug("received input event", slog.Any("value", event))
+
+		// TODO fixed input channel should come from input itself
 		ch := cfg.Input.Channel
+		// TODO midi channel is implementation specific should be internally (before)
+		var status uint8     // TODO remove and replace with event.channel use
 		cmd := status & 0xF0 // mask off all but top 4 bits
 		if cmd >= 0x80 && cmd <= 0xE0 {
 			// it's a voice message
@@ -74,31 +110,21 @@ func main() {
 			ch = (status & 0x0F) + 1
 		}
 
-		key := midiToKey(ch, cc)
+		key := midiToKey(ch, event.Control)
 		callback := callbacks[key]
 		if callback == nil {
-			log.Printf("Unmapped MIDI Event CC Number [%v] CC Value [%v] Status [%v]", cc, val, status)
+			slog.Warn("unmapped MIDI event", slog.Any("control", event.Control), slog.Any("value", event.Value), slog.Any("status", status))
 			return
 		}
-		callback.(func(uint8, uint8, uint8))(cc, val, status)
-	})
-
-	/*
-		callback := callbacks["0102"]
-		go func() {
-			for i := range 2 {
-				callback.(func(ch, status, val uint8))(0, 1, 0x01)
-				// Calling Sleep method
-				time.Sleep(2000 * time.Millisecond)
-				fmt.Println("xxx ", i)
-			}
-		}()
-	*/
+		slog.Info("mapped MIDI event", slog.Any("control", event.Control), slog.Any("value", event.Value), slog.Any("status", status))
+		callback(event.Channel, event.Value, status)
+	}
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
-	log.Println("MixGo is up and running!")
+	slog.Info("MixGo is up and running!")
 	signal := <-signalChan
-	log.Printf("Exitting on signal: %d\n", signal)
-	log.Println("Done.")
+
+	slog.Info("exitting", slog.Any("signal", signal))
+	slog.Info("done.")
 }

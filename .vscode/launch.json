@@ -8,9 +8,8 @@
             "request": "launch",
             "mode": "auto",
             "programX": "${fileDirname}",
-            "programY": "main.go",
-            "program": "${workspaceRoot}",
-            "args": ["${workspaceFolder}/config/config-cq-gpio.yml"],
+            "program": "main.go",
+            "args": ["${workspaceFolder}/config/config-cq.yml"],
             "cwd": "${workspaceFolder}",
         }
     ],

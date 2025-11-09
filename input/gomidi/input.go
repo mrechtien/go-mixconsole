@@ -9,6 +9,7 @@ import (
 	"github.com/mrechtien/mixgo/input"
 
 	"gitlab.com/gomidi/midi/v2"
+	"gitlab.com/gomidi/midi/v2/drivers"
 	//_ "gitlab.com/gomidi/midi/v2/drivers/portmididrv"
 )
 
@@ -31,12 +32,16 @@ func toHex(input any) string {
 func Setup(config *config.Config, inputEvents chan *input.InputEvent) {
 	printMidiDevices()
 
-	in, err := midi.FindInPort(config.Input.Name)
+	midiIn, err := midi.FindInPort(config.Input.Name)
 	if err != nil {
 		log.Fatalln("can't find given MIDI input device")
 	}
 
-	stop, err := midi.ListenTo(in, func(msg midi.Message, timestampms int32) {
+	go listenToMidiIn(midiIn, inputEvents)
+}
+
+func listenToMidiIn(midiIn drivers.In, inputEvents chan *input.InputEvent) {
+	stop, err := midi.ListenTo(midiIn, func(msg midi.Message, timestampms int32) {
 		var bt []uint8
 		var ch, cc, val uint8
 		switch {

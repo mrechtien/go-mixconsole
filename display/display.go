@@ -66,6 +66,11 @@ func CreateDisplayEvent(control uint8, value uint8) *DisplayEvent {
 
 func SetupDisplay(display *config.Display, mappings []config.Mapping, displayEvents chan *DisplayEvent) {
 
+	if display == nil || len(display.Name) == 0 {
+		slog.Info("no display configured - skipping setup")
+		return
+	}
+
 	stateDisplay := createDisplay(display.Name)
 	for _, mapping := range mappings {
 		switch mapping.Name {

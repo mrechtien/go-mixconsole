@@ -66,7 +66,7 @@ func verifyTapTempo(t *testing.T, expected int, actual int) {
 
 func triggerTapTempo(t *testing.T, tapDelay *BaseTapDelay) int {
 	// max delay time is 300
-	return CalculateTapTempo(tapDelay, 300)
+	return CalculateTapTempo(tapDelay, 300, 3)
 }
 
 func TestCalculateAverageDelay(t *testing.T) {

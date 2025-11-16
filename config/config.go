@@ -69,3 +69,13 @@ func ReadConfig(path string) Config {
 	}
 	return config
 }
+
+func LoadBootstrapConfig() *Config {
+	// init and read configuration
+	var cfg Config
+	if len(os.Args) == 2 {
+		configPath := os.Args[1]
+		cfg = ReadConfig(configPath)
+	}
+	return &cfg
+}

@@ -38,15 +38,12 @@ func setupLogging() {
 	slog.SetDefault(logger)
 }
 
+
+
 func main() {
 	setupLogging()
 
-	// init and read configuration
-	var cfg config.Config
-	if len(os.Args) == 2 {
-		configPath := os.Args[1]
-		cfg = config.ReadConfig(configPath)
-	}
+	cfg := bootstrap()
 
 	// setup wifi
 	if len(cfg.Wifi.SSID) > 0 {

@@ -63,6 +63,7 @@ func listenToGpio(mapping config.Mapping, inputEvents chan *input.InputEvent) {
 	if port == nil {
 		log.Fatalf("failed to find GPIO [%v]", port)
 	}
+	defer port.Halt()
 
 	slog.Debug("listen to gpio", slog.Any("port", port), slog.Any("function", port.Function()))
 

@@ -12,6 +12,7 @@ type InputEvent struct {
 
 type InputSource interface {
 	Setup(config *config.Config, inputEvents chan *InputEvent)
+	Reset()
 }
 
 type InputSourceCreator func(name string) *InputSource

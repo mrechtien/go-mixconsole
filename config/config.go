@@ -31,6 +31,7 @@ type Mapping struct {
 	Target  uint8
 	ValueOn uint8
 	Display uint8
+	Config  string
 }
 
 type Wifi struct {
@@ -57,25 +58,30 @@ func NewMapping() *Mapping {
 	}
 }
 
-func ReadConfig(path string) Config {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		log.Fatalln("config file not readable, path: " + path)
-	}
-	config := Config{}
-	err = yaml.Unmarshal(data, &config)
-	if err != nil {
-		log.Fatalln("config file not parsable, path: " + path)
-	}
-	return config
-}
-
-func LoadBootstrapConfig() *Config {
+func ReadConfigFromArgs() *Config {
 	// init and read configuration
 	var cfg Config
 	if len(os.Args) == 2 {
 		configPath := os.Args[1]
 		cfg = ReadConfig(configPath)
 	}
+	return &cfg
+}
+
+func ReadConfig(path string) Config {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		log.Fatalln("config file not readable, path: " + path)
+	}
+	cfg := Config{}
+	err = yaml.Unmarshal(data, &cfg)
+	if err != nil {
+		log.Fatalln("config file not parsable, path: " + path)
+	}
+	return cfg
+}
+
+func LoadBootstrapConfig() *Config {
+	cfg := ReadConfig("config/bootstrap.yml")
 	return &cfg
 }

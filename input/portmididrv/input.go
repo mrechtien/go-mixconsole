@@ -69,6 +69,10 @@ func (portMidiInput *PortMidiInput) Setup(config *config.Config, inputEvents cha
 	go listenToMidiIn(inputName, inputEvents)
 }
 
+func (portMidiInput *PortMidiInput) Reset() {
+	// TODO XXX
+}
+
 func listenToMidiIn(inputName portmidi.DeviceID, inputEvents chan *input.InputEvent) {
 	midiIn, err := portmidi.NewInputStream(inputName, 1024)
 	if err != nil {

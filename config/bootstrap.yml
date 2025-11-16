@@ -16,7 +16,8 @@ Mappings:
     #  Display: 26
     #  Target: 0
     #  ValueOn: 1
-    - Name: 'config-cq.yml'
+    - Name: 'MuteChannel'
+      Config: 'config-cq-gpio.yml'
       Control: 17
       Display: 26
       ValueOn: 1

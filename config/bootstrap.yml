@@ -1,23 +1,27 @@
 #
-# Configuration for Allen & Heath CQ18T
+# Bootstrap configuration: select a runtime profile with a foot switch.
 #
-Input:
-    Type: 'gpio'
-Display:
-    Name: 'gpio'
-Mappings:
-    #- Name: 'config-cq-gpio.yml'
-      #Control: 17
-      #Display: 26
-      #Target: 81
-      #ValueOn: 1
-    #- Name: 'config-xr.yml'
-    #  Control: 17
-    #  Display: 26
-    #  Target: 0
-    #  ValueOn: 1
-    - Name: 'MuteChannel'
-      Config: 'config-cq-gpio.yml'
-      Control: 17
-      Display: 26
-      ValueOn: 1
+# Profile config paths are relative to this file. When no profile is selected
+# within the timeout, the default profile is used.
+#
+input:
+  type: gpio
+  channel: 0
+
+display:
+  type: gpio
+
+timeout: 30s
+default: config-cq-gpio.yml
+
+profiles:
+  - control: 17
+    on_value: 1
+    led: 26
+    config: config-cq-gpio.yml
+
+  # Add more profiles as needed, for example:
+  # - control: 27
+  #   on_value: 1
+  #   led: 22
+  #   config: config-xr.yml
